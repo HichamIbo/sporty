@@ -1,0 +1,117 @@
+services:
+  # Zookeeper Service
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: sporty-zookeeper
+    hostname: zookeeper
+    networks:
+      - sporty-network
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVER_ID: 1
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Kafka Service
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: sporty-kafka
+    hostname: kafka
+    networks:
+      - sporty-network
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Sporty Application Service
+  sporty-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sporty-app
+    hostname: sporty-app
+    networks:
+      - sporty-network
+    ports:
+      - "8080:8080"
+    environment:
+      # Kafka Configuration
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      KAFKA_TOPIC_SCORE_UPDATES: sports-score-updates
+      KAFKA_TOPIC_PARTITIONS: 3
+      KAFKA_REPLICATION_FACTOR: 1
+      KAFKA_PUBLISH_TIMEOUT: 5000
+
+      # Server Configuration
+      SERVER_PORT: 8080
+
+      # External API Configuration (using mock within the app)
+      EXTERNAL_API_BASE_URL: http://localhost:8080
+      EXTERNAL_API_TIMEOUT: 5000
+      EXTERNAL_API_MAX_RETRIES: 2
+
+      # Mock External API
+      MOCK_EXTERNAL_API_ENABLED: "true"
+
+      # Java Options
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+# Networks
+networks:
+  sporty-network:
+    driver: bridge
+    name: sporty-network
+
+# Volumes
+volumes:
+  zookeeper-data:
+    name: sporty-zookeeper-data
+  zookeeper-logs:
+    name: sporty-zookeeper-logs
+  kafka-data:
+    name: sporty-kafka-data
+

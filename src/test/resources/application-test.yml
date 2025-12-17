@@ -1,0 +1,31 @@
+# Test Configuration
+spring:
+  application:
+    name: sporty-event-tracker-test
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+server:
+  port: 0  # Random port for tests
+
+kafka:
+  topic:
+    score-updates: test-sports-score-updates
+    partitions: 1
+    replication-factor: 1
+  publish:
+    timeout: 3000
+
+external:
+  api:
+    base-url: http://localhost:8080
+    timeout: 3000
+    max-retries: 1
+
+logging:
+  level:
+    org.example.sporty: DEBUG
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
+
