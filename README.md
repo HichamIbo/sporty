@@ -33,7 +33,7 @@ A microservice for tracking live sports events and publishing real-time score up
 - **Idempotent Publishing**: Guaranteed exactly-once Kafka message delivery
 - **REST API**: Simple endpoints to manage event status
 - **Mock External API**: Built-in mock API for development and testing
-- **Health Check**: Simple `/health` endpoint for monitoring
+- **Health Check**: Spring Actuator health endpoint at `/actuator/health`
 - **OpenAPI Documentation**: Interactive Swagger UI for API exploration
 - **Comprehensive Testing**: Unit, integration, and embedded Kafka tests
 
@@ -366,7 +366,7 @@ Retrieve current status of an event.
 
 #### Health Check
 
-**GET** `/health`
+**GET** `/actuator/health`
 
 Check the application health status.
 
@@ -726,11 +726,11 @@ docker-compose down -v
 
 ### Health Check
 
-The application exposes a health check endpoint:
+The application exposes a health check endpoint via Spring Boot Actuator:
 
 ```bash
 # Check application health status
-curl http://localhost:8080/health
+curl http://localhost:8080/actuator/health
 ```
 
 **Response:**
