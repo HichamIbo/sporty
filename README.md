@@ -714,7 +714,7 @@ services:
 docker-compose up -d
 
 # View logs
-docker-compose logs -f sporty
+docker-compose logs -f sporty-app
 
 # Stop and remove
 docker-compose down -v
