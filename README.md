@@ -1,4 +1,4 @@
-# Sporty - Live Sports Event Tracker
+# Live Sports Event Tracker
 
 ![Java](https://img.shields.io/badge/Java-17-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen)
